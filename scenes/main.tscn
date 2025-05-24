@@ -1,0 +1,86 @@
+[gd_scene load_steps=6 format=3 uid="uid://b1ivo3f1xukvl"]
+
+[ext_resource type="PackedScene" uid="uid://cvr1nhupr2bmx" path="res://assets/tile-straight.glb" id="1_0wfyh"]
+[ext_resource type="PackedScene" uid="uid://semph0gbc1s4" path="res://assets/tile.glb" id="1_o5qli"]
+[ext_resource type="PackedScene" uid="uid://b4dkgptewf2ha" path="res://assets/tile-corner-round.glb" id="2_sugp2"]
+[ext_resource type="PackedScene" uid="uid://buyy6wcyvvroo" path="res://assets/tile-spawn-end-round.glb" id="4_tbgi4"]
+
+[sub_resource type="GDScript" id="GDScript_sgp6g"]
+script/source = "extends Node3D
+@export var tile_straight:PackedScene
+@export var tile_corner:PackedScene
+@export var tile_empty:PackedScene
+@export var tile_start:PackedScene
+
+@export var map_length:int = 24
+@export var map_height:int = 13
+
+
+var _pg:PathGenerator
+
+# Called when the node enters the scene tree for the first time.
+func _ready() -> void:
+	_pg = PathGenerator.new(map_length,map_height)
+	_display_path()
+	_complete_grid()
+	
+func _complete_grid():
+	for x in range(map_length):
+		for y in range(map_height):
+			if not _pg.get_path().has(Vector2i(x,y)):
+				var tile:Node3D = tile_empty.instantiate()
+				add_child(tile)
+				tile.global_position = Vector3(x,0,y)
+
+func _display_path():
+	var _path:Array[Vector2i] =_pg.generate_path()
+	while _path.size() < 35:
+		_path = _pg.generate_path()
+	
+	
+	for element in _path:
+		var tile_score:int = _pg.get_tile_score(element)
+		var tile:Node3D = tile_empty.instantiate()
+		var tile_rotation:Vector3 = Vector3.ZERO
+		if tile_score == 2:
+			tile = tile_start.instantiate()
+			tile_rotation = Vector3(0,90,0)
+		elif tile_score == 8:
+			tile = tile_start.instantiate()
+			tile_rotation = Vector3(0,270,0)
+		elif tile_score == 2 or tile_score == 8 or tile_score == 10:
+			tile = tile_straight.instantiate()
+			tile_rotation = Vector3(0,90,0)
+		elif tile_score == 1 or tile_score == 4 or tile_score == 5:
+			tile = tile_straight.instantiate()
+			tile_rotation = Vector3(0,0,0)
+		elif tile_score == 12:
+			tile = tile_corner.instantiate()
+			tile_rotation = Vector3(0,270,0)
+		elif tile_score == 6:
+			tile = tile_corner.instantiate()
+			tile_rotation = Vector3(0,0,0)
+		elif tile_score == 9:
+			tile = tile_corner.instantiate()
+			tile_rotation = Vector3(0,180,0)
+		elif tile_score == 3:
+			tile = tile_corner.instantiate()
+			tile_rotation = Vector3(0,90,0)
+		add_child(tile)
+		tile.global_position = Vector3(element.x, 0, element.y)
+		tile.global_rotation_degrees = tile_rotation
+"
+
+[node name="main" type="Node3D"]
+script = SubResource("GDScript_sgp6g")
+tile_straight = ExtResource("1_0wfyh")
+tile_corner = ExtResource("2_sugp2")
+tile_empty = ExtResource("1_o5qli")
+tile_start = ExtResource("4_tbgi4")
+
+[node name="DirectionalLight3D" type="DirectionalLight3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 0.569853, 0.821746, 0, -0.821746, 0.569853, 11.2555, 11.8699, 14.2706)
+
+[node name="Camera3D" type="Camera3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 0.615249, 0.788333, 0, -0.788333, 0.615249, 11.2555, 12.0443, 13.4852)
+fov = 68.2
